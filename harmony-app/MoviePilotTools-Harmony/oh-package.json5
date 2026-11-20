@@ -1,0 +1,13 @@
+{
+  "modelVersion": "26.0.0",
+  "name": "moviepilottools-harmony",
+  "version": "1.0.0",
+  "description": "MPtools HarmonyOS NEXT client (Phase 1)",
+  "main": "",
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {},
+  "devDependencies": {
+    "@ohos/hypium": "1.0.25"
+  }
+}

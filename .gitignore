@@ -1,0 +1,101 @@
+# Xcode
+#
+# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
+
+## User settings
+xcuserdata/
+
+## compatibility with Xcode 8 and earlier (ignoring these is recommended)
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+
+## Xcode 9 and later (supported since git 1.7.9)
+# .xcworkspace is often managed by CocoaPods or Carthage, so we typically do not ignore it.
+# However, for a simple project without deps, it's fine.
+# But usually we keep .xcodeproj and .xcworkspace
+# We ignore user data inside them.
+
+## Build generated
+build/
+DerivedData/
+
+## Python caches
+__pycache__/
+*.py[cod]
+
+## Misc
+.DS_Store
+.llb/
+.gemini/
+.agent/
+.claude/worktrees/
+
+# Android 本地/构建产物
+android/local.properties
+android/keystore/
+*.jks
+android/dist/
+.gradle/
+.tmp/
+
+# 本地打包产物走 GitHub Releases 分发，不进仓库
+/dist/
+
+# 鸿蒙：依赖 / 构建产物 / 本地签名，一律不进仓库
+harmony-app/**/oh_modules/
+harmony-app/**/build/
+harmony-app/**/.hvigor/
+harmony-app/**/.preview/
+harmony-app/**/signing/
+.hvigor/
+*_signed.hap
+*.hap
+
+# 鸿蒙工程签名配置（含本机绝对路径与签名口令），只提交 build-profile.example.json5
+harmony-app/**/build-profile.json5
+
+# IDE 本地配置（含本机路径）
+.idea/
+harmony-app/**/.idea/
+
+# 临时中转目录
+tmp/
+
+# 日志
+*.log
+
+# 本工具的本地项目数据（会话记录 / memory），不进仓库
+.workbuddy/
+
+# ===== 以下为 2026-11-20 建库整理时排除的内容 =====
+# 个人笔记 / 开工备忘（含本机路径与签名口令），永不进仓库
+/00-*.md
+/notes/
+
+# iOS 原工程（OiiQT）及其 Xcode 辅助脚本：双端已独立演进，不再跟进
+# 注意必须写成 /OiiQT/ 这种锚定形式：Windows 下 git 大小写不敏感，
+# 裸写 OiiQT/ 会把 android/app/src/main/java/com/oiiqt/ 的源码一起吃掉
+/OiiQT/
+/OiiQT.xcodeproj/
+/OiiQT-Info.plist
+/add_file.rb
+/add_network_manager.rb
+/tests/
+/.github/workflows/release-ipa.yml
+
+# 鸿蒙壳工程模板（本地留作参考，仓库只放正式工程）
+/harmony-app/_tpl/
+
+# 上游 OiiQT（iOS）的说明文档副本：仓库只放本项目自己的文档，出处见 README 的致谢与许可证段
+/docs/OiiQT-README*.md
+
+# 编辑器本地配置
+/.vscode/
+
+# 发布说明只写在 GitHub Release 页，不随仓库走
+/release-notes-*.md
+
+# 按日期命名的开发改动记录（本地留档，不进仓库）
+/harmony-app/docs/20[0-9][0-9]-*.md

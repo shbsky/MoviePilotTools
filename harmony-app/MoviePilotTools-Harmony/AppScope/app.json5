@@ -1,0 +1,12 @@
+{
+  "app": {
+    "bundleName": "com.moviepilottools.mptools",
+    "vendor": "oiiqt",
+    // 2026-11-20 重建仓库：对外版本号重新从 1.0.1 起，versionCode 保持单调递增（31），
+    // 避免覆盖安装时被判为降级
+    "versionCode": 31,
+    "versionName": "1.0.1",
+    "icon": "$media:app_icon",
+    "label": "$string:app_name"
+  }
+}
