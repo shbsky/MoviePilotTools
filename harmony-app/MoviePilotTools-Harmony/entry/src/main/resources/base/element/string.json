@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "MoviePilotTools 下载器管理" },
+    { "name": "EntryAbility_desc", "value": "MoviePilotTools" },
+    { "name": "EntryAbility_label", "value": "MoviePilotTools" }
+  ]
+}

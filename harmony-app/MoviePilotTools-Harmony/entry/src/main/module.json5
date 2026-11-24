@@ -1,0 +1,41 @@
+{
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "description": "$string:module_desc",
+    "mainElement": "EntryAbility",
+    "deviceTypes": ["phone"],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "abilities": [
+      {
+        "name": "EntryAbility",
+        "srcEntry": "./ets/entryability/EntryAbility.ets",
+        "description": "$string:EntryAbility_desc",
+        "icon": "$media:icon",
+        "label": "$string:EntryAbility_label",
+        "startWindowIcon": "$media:icon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        // 长时任务类型：不声明这条，startBackgroundRunning() 会被系统拒绝，
+        // 锁屏/切后台几分钟后进程被冻结，音乐随之停止（权限 KEEP_BACKGROUND_RUNNING 只是门槛，不是开关）
+        "backgroundModes": ["audioPlayback", "dataTransfer"],
+        "skills": [
+          {
+            "entities": ["entity.system.home"],
+            "actions": ["action.system.home"]
+          }
+        ]
+      }
+    ],
+    "requestPermissions": [
+      { "name": "ohos.permission.INTERNET" },
+      { "name": "ohos.permission.GET_NETWORK_INFO" },
+      { "name": "ohos.permission.KEEP_BACKGROUND_RUNNING" }
+    ],
+    "metadata": [
+      { "name": "network_security_config", "resource": "$profile:network_config" }
+    ]
+  }
+}

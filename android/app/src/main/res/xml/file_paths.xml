@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider 可共享的路径：只暴露更新包目录，别的一律不给 -->
+<paths>
+    <external-files-path name="apk_external" path="update/" />
+    <files-path name="apk_internal" path="update/" />
+</paths>

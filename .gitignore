@@ -1,0 +1,50 @@
+# ===== 系统 / 编辑器 =====
+.DS_Store
+.llb/
+.gemini/
+.agent/
+.claude/worktrees/
+.idea/
+harmony-app/**/.idea/
+/.vscode/
+
+# ===== Python（本地脚本）=====
+__pycache__/
+*.py[cod]
+
+# ===== 安卓：本地配置 / 构建产物 =====
+android/local.properties
+android/keystore/
+*.jks
+android/dist/
+.gradle/
+build/
+.tmp/
+tmp/
+
+# ===== 鸿蒙：依赖 / 构建产物 / 本地签名 =====
+harmony-app/**/oh_modules/
+harmony-app/**/build/
+harmony-app/**/.hvigor/
+harmony-app/**/.preview/
+harmony-app/**/signing/
+.hvigor/
+*_signed.hap
+*.hap
+
+# 鸿蒙工程签名配置（含本机绝对路径与签名口令），只提交 build-profile.example.json5
+harmony-app/**/build-profile.json5
+
+# ===== 发布包 / 日志 =====
+/dist/
+*.log
+
+# ===== 本工具的本地数据与私人笔记（含本机路径与签名口令，永不进仓库）=====
+.workbuddy/
+/00-*.md
+/notes/
+/release-notes-*.md
+/harmony-app/docs/20[0-9][0-9]-*.md
+
+# 鸿蒙壳工程模板（本地留作参考，仓库只放正式工程）
+/harmony-app/_tpl/

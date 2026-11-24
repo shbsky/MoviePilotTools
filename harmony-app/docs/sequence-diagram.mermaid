@@ -1,0 +1,106 @@
+// MPtools HarmonyOS — 核心调用流程时序图（与 ARCHITECTURE.md §4 一致）
+
+## 投送音箱全链路
+sequenceDiagram
+    participant UI as Music.ets / CastSheet.ets
+    participant MVM as MusicViewModel
+    participant CC as CastController
+    participant DLNA as DlnaClient
+    participant SOCK as socket.DatagramSocket
+    participant HTTP as HttpClient
+    participant BGM as BackgroundAudioManager
+    UI->>MVM: openCastSheet()
+    UI->>CC: scan()
+    CC->>DLNA: discover()
+    DLNA->>SOCK: bind() + sendTo(239.255.255.250:1900, M-SEARCH ×3)
+    SOCK-->>DLNA: on('message') 各设备单播响应(location)
+    DLNA->>HTTP: GET 每个 location（设备描述 XML）
+    DLNA-->>CC: DlnaDevice[]（controlUrl + volumeUrl）
+    CC-->>UI: emit(CastState.scanned)
+    UI->>CC: playQueue(device, songs, startIndex)
+    CC->>BGM: startCastKeepAlive()（长时任务+AVSession）
+    CC->>HTTP: GET 音流 Range:bytes=0-0（投送前探测）
+    CC->>DLNA: play(device, url, title) → SetAVTransportURI + Play
+    CC->>CC: startMonitor()：0.5s 本地推进 / 2.5s 真轮询
+    CC->>DLNA: GetTransportInfo + GetMediaInfo（CurrentURI 播放权校验）
+    alt 一首放完（STOPPED/到尾停顿/位置不动）
+        CC->>DLNA: push(index+1) 推下一首
+    else 音箱被接管（URI 不匹配 >6s）
+        CC-->>UI: 「音箱正在播放其他内容，已暂停连播」(playing=false)
+    end
+    UI->>CC: togglePause()/next()/previous()/setVolume(p)（120ms 防抖）
+    UI->>CC: stopCasting() → Stop + 撤销长时任务
+
+## 音乐播放 + 后台保活
+sequenceDiagram
+    participant UI as Music.ets / PlayerBars.ets
+    participant MVM as MusicViewModel
+    participant PE as PlayerEngine(AVPlayer)
+    participant BGM as BackgroundAudioManager
+    participant AVS as AVSessionKit
+    participant BT as BackgroundTaskKit
+    participant HTTP as HttpClient
+    UI->>MVM: playAll(songs, index)
+    MVM->>PE: setQueue + load(urlResolver(song))
+    PE->>HTTP: GET 音流（?access_token= 复用 TokenVault 会话）
+    PE->>PE: avPlayer.url→prepare→play
+    MVM->>BGM: onPlaybackChanged(state)
+    BGM->>AVS: setAVMetadata(标题/歌手/时长/封面) + setAVPlaybackState(playing/position)
+    BGM->>BT: startContinuousTask(bgModeId=AUDIO_PLAYBACK)
+    BGM->>AVS: setAVSessionActive(true)（锁屏/通知栏媒体卡出现）
+    AVS-->>BGM: onPlay/onPause/onPlayNext/onPlayPrevious 回调
+    BGM->>PE: 转发控制命令
+    loop 每 500ms
+        PE-->>MVM: 进度 tick → 合并快照 now
+    end
+    MVM-->>UI: emit(now)（列表高亮/迷你条/全屏页共用）
+
+## 多端点并发探测选路
+sequenceDiagram
+    participant VM as AppViewModel / MpViewModel / SongloftClient
+    participant ER as EndpointResolver
+    participant HTTP as HttpClient(probeClient 2.5s 超时)
+    VM->>ER: resolve(cacheKey, endpoints, mode, probe)
+    alt MANUAL
+        ER->>HTTP: probe(pinned)
+        alt 通
+            ER-->>VM: pinned（写入缓存 10min）
+        else 不通
+            ER->>ER: 回退并发探测其余端点
+        end
+    else AUTO 且缓存未过期
+        ER-->>VM: cachedEndpoint 直接命中
+    else AUTO 无缓存
+        par 并发探测所有候选
+            ER->>HTTP: probe(ep1)（2xx/401/403 视为可达）
+        par
+            ER->>HTTP: probe(ep2)
+        par
+            ER->>HTTP: probe(epN)
+        end
+        ER->>ER: Promise.race 取最先成功者（预算 3200ms）→ remember(cacheKey, winner)
+        ER-->>VM: winner
+    end
+    Note over VM: 请求失败时 VM→ER.invalidate(cacheKey)，下次重探
+
+## MP 发现页数据流
+sequenceDiagram
+    participant UI as MoviePilot.ets
+    participant MVM as MpViewModel
+    participant MP as MoviePilotClient
+    participant ER as EndpointResolver
+    participant HTTP as HttpClient
+    UI->>MVM: onPageShow()
+    MVM->>MVM: activeServer = ConfigStore.mpServers[activeMpServerId]
+    UI->>MVM: selectChannel(MpChannels.all[i])
+    MVM->>MP: discover(channel, page=1)
+    MP->>ER: resolve(mpServer)（并发探测选路）
+    ER-->>MP: chosen endpoint
+    MP->>HTTP: GET /api/v1/…?page=1（Authorization: Bearer <apiToken>）
+    HTTP-->>MP: JSON items[]
+    MP-->>MVM: MpMedia[]
+    MVM-->>UI: emit(items, hasMore)
+    UI->>MVM: onScrollEnd()（触底）
+    MVM->>MP: discover(channel, page+1) → 追加 emit
+    UI->>MVM: subscribe(media, season)
+    MVM->>MP: subscribe(...) → 通知栏角标态刷新

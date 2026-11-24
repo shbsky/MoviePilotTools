@@ -1,0 +1,230 @@
+// MPtools HarmonyOS — 关键类图（与 ARCHITECTURE.md §3 一致）
+classDiagram
+    %% ===== model 层（纯数据） =====
+    class Endpoint {
+        +EndpointData data
+        +isValid() boolean
+        +effectivePort() number
+        +display() string
+        +normalized() Endpoint
+        +url(path) string
+        +hostKey() string
+    }
+    class ServerConfig {
+        +string id
+        +string name
+        +ServerType type
+        +Endpoint[] endpoints
+        +string apiKey
+        +boolean useApiKey
+        +string rpcPath
+        +EndpointMode endpointMode
+        +int pinnedEndpointIndex
+        +displayName() string
+        +activeEndpoints() Endpoint[]
+    }
+    class TorrentTask {
+        +TorrentTaskData data
+        +id() string
+        +isFinished() boolean
+        +taxonomyTags() string[]
+    }
+    class ServerSnapshot {
+        +string serverId
+        +boolean online
+        +long downloadSpeed
+        +long freeSpace
+        +ratio() number
+    }
+    class MpResource {
+        +string siteName
+        +string title
+        +long sizeBytes
+        +int seeders
+        +double downloadFactor
+        +string rawJson
+        +isFree() boolean
+        +promotionLabel() string
+        +resolution() string
+    }
+    class ResourceFilter {
+        +string site
+        +boolean promotionOnly
+        +ResourceSortField sortField
+        +activeCount() number
+        +apply(list) MpResource[]
+    }
+    class MusicSong {
+        +long id
+        +string title
+        +string artist
+        +string streamUrl
+        +string format
+        +int bitRate
+    }
+    class PlaybackState {
+        +MusicSong current
+        +boolean isPlaying
+        +long positionMs
+        +int repeatMode
+        +string castingTo
+        +progress() number
+    }
+    class CastState {
+        +boolean scanning
+        +DlnaDevice[] devices
+        +DlnaDevice active
+        +MusicSong[] queue
+        +int index
+        +int volume
+        +casting() boolean
+    }
+    class DlnaDevice {
+        +string name
+        +string location
+        +string controlUrl
+        +string volumeUrl
+        +volumeSupported() boolean
+    }
+
+    %% ===== data 层 =====
+    class ConfigStore {
+        +load() PersistedState
+        +save(state) void
+    }
+    class CryptoBox {
+        +encrypt(plain) string
+        +decrypt(stored) string
+    }
+    class TokenVault {
+        +saveSongloft(base, token, exp) void
+        +loadSongloft() Cached
+        +clearSongloft() void
+    }
+    class RssRuleEngine {
+        +match(source, item) boolean
+    }
+    ConfigStore --> CryptoBox : 加密持久化
+    ConfigStore --> ServerConfig : servers
+    ConfigStore --> RssRuleEngine : rssSources（代码级保留）
+    TokenVault --> CryptoBox
+
+    %% ===== net 层 =====
+    class HttpClient {
+        +get(url, headers) Promise
+        +post(url, body, headers) Promise
+        +postForm(url, form) Promise
+        +probeGet(url) Promise
+        -cookieStore Map~host,Cookie[]
+    }
+    class EndpointResolver {
+        +resolve(cacheKey, endpoints, mode, probe) Endpoint
+        +invalidate(cacheKey) void
+        +candidates(...) Endpoint[]
+        -cache Map~key,Cached~
+    }
+    class QBittorrentClient
+    class TransmissionClient
+    class MoviePilotClient
+    class SongloftClient {
+        +login() Promise~string~
+        +songs(offset, keyword) Promise
+        +setFavorite(id, on) Promise
+        +playableUrl(song) string
+    }
+    class DlnaClient {
+        +discover(timeoutMs) DlnaDevice[]
+        +play(device, url, title) Result
+        +transport(device) DlnaTransport
+        +mediaUri(device) string
+        +setVolume(device, pct) Result
+    }
+    class DoubanImageProvider {
+        +fetchPixelMap(url) PixelMap
+    }
+    QBittorrentClient --> HttpClient
+    TransmissionClient --> HttpClient
+    MoviePilotClient --> HttpClient
+    MoviePilotClient --> EndpointResolver
+    QBittorrentClient --> EndpointResolver
+    TransmissionClient --> EndpointResolver
+    SongloftClient --> HttpClient
+    SongloftClient --> EndpointResolver
+    SongloftClient --> TokenVault
+    DlnaClient --> HttpClient : 设备描述/SOAP
+
+    %% ===== player 层 =====
+    class PlayerEngine {
+        -AVPlayer avPlayer
+        +setQueue(songs, index) void
+        +play() void
+        +pause() void
+        +seekTo(ms) void
+        +setVolume(f) void
+        +state() PlaybackState
+    }
+    class BackgroundAudioManager {
+        -AVSession session
+        +attach(engine) void
+        +syncMetadata(song) void
+        +startKeepAlive() void
+        +stopKeepAlive() void
+    }
+    class CastController {
+        +scan() void
+        +playQueue(device, songs, idx) void
+        +togglePause() void
+        +seekTo(ms) void
+        +setVolume(pct) void
+        +stopCasting() void
+        +state() CastState
+    }
+    CastController --> DlnaClient
+    CastController --> BackgroundAudioManager : 投送保活
+    PlayerEngine --> SongloftClient : urlResolver
+    BackgroundAudioManager --> PlayerEngine : 命令转发
+
+    %% ===== vm 层 =====
+    class StoreBase {
+        #listeners
+        +subscribe(fn) void
+        #emit() void
+    }
+    class AppViewModel {
+        +state() AppUiState
+        +addServer(cfg) void
+        +testEndpoints(server) Result[]
+        +startPolling() void
+        +torrentAction(task, op) void
+    }
+    class MpViewModel {
+        +selectChannel(ch) void
+        +searchMedia(q) void
+        +subscribe(media, season) void
+        +searchResources(media) void
+        +download(resource, downloader, path) void
+    }
+    class MusicViewModel {
+        +configure(url, user, pass) void
+        +playAll(songs, index) void
+        +toggleFavorite(song) void
+        +now() PlaybackState
+    }
+    AppViewModel --> EndpointResolver
+    AppViewModel --> QBittorrentClient
+    AppViewModel --> TransmissionClient
+    AppViewModel --> ConfigStore
+    AppViewModel --> StoreBase
+    MpViewModel --> MoviePilotClient
+    MpViewModel --> StoreBase
+    MusicViewModel --> SongloftClient
+    MusicViewModel --> PlayerEngine
+    MusicViewModel --> CastController : now 合并
+    MusicViewModel --> TokenVault
+
+    %% ===== 关系标注 =====
+    TorrentTask --> ServerConfig : serverId 归属
+    CastState --> DlnaDevice
+    CastState --> MusicSong : queue
+    PlaybackState --> MusicSong : current
+    MusicViewModel ..> PlaybackState : emit(合并快照)
