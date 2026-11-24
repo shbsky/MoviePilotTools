@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moviepilottools.mptools.data.TorrentStatus
 import com.moviepilottools.mptools.data.TorrentTask
+import com.moviepilottools.mptools.data.breakableName
 import com.moviepilottools.mptools.ui.components.OiiDialog
 import com.moviepilottools.mptools.ui.components.PageHeader
 import com.moviepilottools.mptools.ui.theme.LocalMptColors
@@ -820,7 +821,7 @@ private fun DeleteTaskDialog(
         onConfirm = onConfirm
     ) {
         Text(
-            "确定要删除「${task.name.take(40)}」吗？",
+            "确定要删除「${breakableName(task.name.take(40))}」吗？",
             fontSize = 13.sp,
             color = colors.textPrimary,
             lineHeight = 19.sp

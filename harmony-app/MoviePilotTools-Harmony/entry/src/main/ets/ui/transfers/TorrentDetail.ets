@@ -363,6 +363,9 @@ export struct TorrentDetailPage {
       Text(`确定要删除「${this.task.name.substring(0, 40)}」吗？`)
         .fontSize(this.theme.fs(14))
         .fontColor(this.theme.colors.textPrimary)
+        // 种子名是无空格点号长串，默认按词断行会把「威.Die.Hard...」整串推到第二行，
+        // 第一行只剩「确定要删除「虎胆龙」几个字；BREAK_ALL 逐字符填满再折行。
+        .wordBreak(WordBreak.BREAK_ALL)
       Blank().height(10)
       Row() {
         Column()

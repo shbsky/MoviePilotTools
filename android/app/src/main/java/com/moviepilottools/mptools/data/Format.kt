@@ -48,6 +48,22 @@ private fun fixedByMagnitude(value: Double, unit: String): String {
 
 fun formatSpeed(bytesPerSecond: Long): String = "${formatBytes(bytesPerSecond)}/s"
 
+/**
+ * 种子名常是「[字幕组] The.Silent.Storm.2026.S01.2160p.60fps...」这种无空格长串，
+ * Compose 默认按词断行会把整串推到下一行，导致首行只剩几个字。
+ * 在每个字符后插入零宽空格（U+200B）制造合法断点，效果等同鸿蒙的 WordBreak.BREAK_ALL。
+ * 只用于显示：徽章识别 / 内容描述 / 搜索仍用原 name，不受影响。
+ */
+fun breakableName(name: String): String {
+    if (name.length < 12) return name
+    val sb = StringBuilder(name.length * 2)
+    for (ch in name) {
+        sb.append(ch)
+        sb.append('\u200B')
+    }
+    return sb.toString()
+}
+
 fun formatRatio(ratio: Double): String = String.format(Locale.US, "%.2f", ratio)
 
 fun formatPercent(progress: Double): String = "${(progress * 100).toInt()}%"

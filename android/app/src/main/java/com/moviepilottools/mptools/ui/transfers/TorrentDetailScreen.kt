@@ -47,6 +47,7 @@ import coil.compose.AsyncImagePainter
 import com.moviepilottools.mptools.data.TorrentStatus
 import com.moviepilottools.mptools.data.TorrentTask
 import com.moviepilottools.mptools.data.extractResolutionBadge
+import com.moviepilottools.mptools.data.breakableName
 import com.moviepilottools.mptools.data.formatBytes
 import com.moviepilottools.mptools.data.formatDateTime
 import com.moviepilottools.mptools.data.formatDurationCN
@@ -335,7 +336,7 @@ fun TorrentDetailScreen(
             }
         ) {
             Text(
-                "确定要删除「${task.name.take(40)}」吗？",
+                "确定要删除「${breakableName(task.name.take(40))}」吗？",
                 fontSize = 13.sp,
                 color = colors.textPrimary,
                 lineHeight = 19.sp
@@ -376,22 +377,6 @@ private fun InfoRow(label: String, value: @Composable () -> Unit) {
             value()
         }
     }
-}
-
-/**
- * 种子名常是「[合雨] The.Silent.Storm.2026.S01.2160p.60fps...」这种无空格长串，
- * Compose 默认不敢在单词中间断行，会把整串推到下一行 → 首行只剩两个字符。
- * 在每个字符后插入零宽空格（U+200B），给排版引擎制造合法断点，效果等同鸿蒙的 WordBreak.BREAK_ALL。
- * 只用于显示：徽章识别 / 内容描述 / 搜索仍用原 task.name，不受影响。
- */
-private fun breakableName(name: String): String {
-    if (name.length < 12) return name
-    val sb = StringBuilder(name.length * 2)
-    for (ch in name) {
-        sb.append(ch)
-        sb.append('\u200B')
-    }
-    return sb.toString()
 }
 
 @Composable

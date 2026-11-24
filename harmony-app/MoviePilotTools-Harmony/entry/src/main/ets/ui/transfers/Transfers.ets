@@ -776,6 +776,9 @@ export struct TransfersPage {
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .lineHeight(this.theme.fs(18))
+        // 种子名是「中文名.Let's.Go.2026.S01.2160p...」这种无空格长串：
+        // 默认 NORMAL 按词断行会把整串推到第二行，第一行只剩中文名几个字 → 用 BREAK_ALL 逐字符填满再折行（与详情标题一致）。
+        .wordBreak(WordBreak.BREAK_ALL)
         .width('100%')
         .margin({ top: 5 })
 
