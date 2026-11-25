@@ -1,7 +1,7 @@
 {
   "modelVersion": "26.0.0",
   "name": "moviepilottools-harmony",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MPtools HarmonyOS NEXT client (Phase 1)",
   "main": "",
   "author": "",

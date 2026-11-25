@@ -1,5 +1,5 @@
-import { EndpointMode, Endpoint, endpointFromJson, newUuid } from './Models';
-import { jStr, jNum, jBool } from '../common/AppConstants';
+import { EndpointMode, Endpoint, endpointFromJson, endpointModeFromJsonValue, newUuid } from './Models';
+import { jStr, jNum, jBool, pick } from '../common/AppConstants';
 
 /**
  * MoviePilot 数据模型，移植安卓 data/MpModels.kt。
@@ -60,8 +60,7 @@ export function mpServerFromJson(o: Record<string, Object>): MpServer {
   m.apiToken = jStr(o, ['apiToken', 'api_token']);
   m.username = jStr(o, ['username']);
   m.password = jStr(o, ['password']);
-  m.endpointMode = Math.trunc(jNum(o, ['endpointMode', 'endpoint_mode'], 0)) === 1
-    ? EndpointMode.MANUAL : EndpointMode.AUTO;
+  m.endpointMode = endpointModeFromJsonValue(pick(o, ['endpointMode', 'endpoint_mode']));
   m.pinnedEndpointIndex = Math.trunc(jNum(o, ['pinnedEndpointIndex', 'pinned_endpoint_index'], 0));
   return m;
 }
@@ -212,8 +211,8 @@ export class MpResource {
       return '';
     }
     let g: string = t.substring(i + 1).trim();
-    // 发布组常写成「发布者@制作组」（BiVerse@ADWeb、KKYY@CHDBits、AOC@BiVerse），
-    // @ 前面是发布者 / 站点前缀，真正的小组名取 @ 之后那一段。
+    // 发布组常写成「发布者@制作组」，@ 前面是发布者 / 站点前缀，
+    // 真正的小组名取 @ 之后那一段。
     const at: number = g.lastIndexOf('@');
     if (at >= 0 && at < g.length - 1) {
       g = g.substring(at + 1).trim();

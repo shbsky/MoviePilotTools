@@ -633,19 +633,26 @@ export class MusicViewModel extends ObservableStore {
     s.favoriteIds = nextIds;
     this.commit(s);
     ToastHub.getInstance().show(fav ? `已取消收藏「${song.title}」` : `已收藏「${song.title}」`);
+    // 乐观更新后失败要回滚：服务端返回 false 和网络异常（Promise reject）两条路径都要覆盖，
+    // 原来只有 .then()，网络一断 UI 就停在「已收藏」但实际没成功。
+    const rollbackFavorite = (): void => {
+      const rollback: Set<number> = new Set<number>(this.state.favoriteIds);
+      if (fav) {
+        rollback.add(song.id);
+      } else {
+        rollback.delete(song.id);
+      }
+      const s2: MusicUiState = this.state.copy();
+      s2.favoriteIds = rollback;
+      this.commit(s2);
+      ToastHub.getInstance().show('收藏操作失败，请重试');
+    };
     client.setFavorite(song.id, !fav).then((ok: boolean): void => {
       if (!ok) {
-        const rollback: Set<number> = new Set<number>(this.state.favoriteIds);
-        if (fav) {
-          rollback.add(song.id);
-        } else {
-          rollback.delete(song.id);
-        }
-        const s2: MusicUiState = this.state.copy();
-        s2.favoriteIds = rollback;
-        this.commit(s2);
-        ToastHub.getInstance().show('收藏操作失败，请重试');
+        rollbackFavorite();
       }
+    }).catch((): void => {
+      rollbackFavorite();
     });
   }
 

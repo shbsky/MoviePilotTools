@@ -157,40 +157,45 @@ export class MoviePilotClient {
       return this.jwt.length > 0;
     }
     this.loginTried = true;
-    try {
-      const endpoints: Endpoint[] = this.server.activeEndpoints();
-      if (endpoints.length === 0) {
-        return false;
-      }
-      const loginUrl: string = this.url(endpoints[0], 'api/v1/login/access-token');
-      const form: Record<string, string> = {
-        'username': this.server.username,
-        'password': this.server.password
-      };
-      const reply: Reply = await postForm(loginUrl, form);
-      if (!reply.isSuccessful()) {
-        return false;
-      }
-      const obj: Record<string, Object> | null = parseJsonObject(reply.body);
-      if (obj === null) {
-        return false;
-      }
-      let token: string = jStr(obj, ['access_token']);
-      if (token.length === 0) {
-        // 部分版本把 token 放在 data.access_token
-        const data: Record<string, Object> | null = jObj(obj, 'data');
-        if (data !== null) {
-          token = jStr(data, ['access_token']);
-        }
-      }
-      if (token.length === 0) {
-        return false;
-      }
-      this.jwt = token;
-      return true;
-    } catch (e) {
+    const endpoints: Endpoint[] = this.server.activeEndpoints();
+    if (endpoints.length === 0) {
       return false;
     }
+    const form: Record<string, string> = {
+      'username': this.server.username,
+      'password': this.server.password
+    };
+    // 逐个地址试：选路命中的不一定是第一个。原来只打 endpoints[0]，
+    // 第一条不通时 loginTried 被永久置位，后续所有接口都因无 JWT 报 401。
+    for (const ep of endpoints) {
+      try {
+        const loginUrl: string = this.url(ep, 'api/v1/login/access-token');
+        const reply: Reply = await postForm(loginUrl, form);
+        if (!reply.isSuccessful()) {
+          continue;
+        }
+        const obj: Record<string, Object> | null = parseJsonObject(reply.body);
+        if (obj === null) {
+          continue;
+        }
+        let token: string = jStr(obj, ['access_token']);
+        if (token.length === 0) {
+          // 部分版本把 token 放在 data.access_token
+          const data: Record<string, Object> | null = jObj(obj, 'data');
+          if (data !== null) {
+            token = jStr(data, ['access_token']);
+          }
+        }
+        if (token.length === 0) {
+          continue;
+        }
+        this.jwt = token;
+        return true;
+      } catch (e) {
+        // 这个地址不通，换下一个
+      }
+    }
+    return false;
   }
 
   /** 「来源:ID」→ v3 的两段式身份；识别不出来源时 source 为 null（只能走老路径） */

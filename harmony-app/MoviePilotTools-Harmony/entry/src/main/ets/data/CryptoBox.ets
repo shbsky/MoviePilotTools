@@ -42,7 +42,9 @@ export class CryptoBox {
       }
       const fresh: Uint8Array = CryptoBox.randomBytes(32);
       prefs.putSync(KEY_CRYPTO_KEY, 'k:' + CryptoBox.b64().encodeToStringSync(fresh));
-      prefs.flush();
+      // 必须同步刷盘：配置会用这把密钥加密后立刻落盘，
+      // 密钥若还没刷进去就被回收，下次启动解密失败 → 配置被当空配置丢弃（显示未配置）。
+      prefs.flushSync();
       CryptoBox.keyBytes = fresh;
       logInfo('CryptoBox', '已生成新的配置加密密钥');
       return CryptoBox.keyBytes;

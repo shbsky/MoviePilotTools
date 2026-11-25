@@ -672,7 +672,7 @@ class MpViewModel(application: Application) : AndroidViewModel(application) {
 
     /** 片单落盘（精简字段），下次开 App 首帧直接命中。 */
     private fun saveHeroCache(serverKey: String, items: List<MpMedia>) {
-        persisted = persisted.copy(
+        persisted = store.load().copy(
             heroCache = HeroCache(
                 serverKey = serverKey,
                 fetchedAt = System.currentTimeMillis(),
@@ -731,7 +731,9 @@ class MpViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun persist(servers: List<MpServer>, activeId: String?) {
-        persisted = persisted.copy(mpServers = servers, activeMpServerId = activeId)
+        // 同 AppViewModel.commit：先读盘上最新整包再改自己的字段，
+        // 避免用启动快照把下载器配置/设置/RSS 源整包覆盖掉。
+        persisted = store.load().copy(mpServers = servers, activeMpServerId = activeId)
         store.save(persisted)
         state = state.copy(servers = servers, activeServerId = activeId)
     }

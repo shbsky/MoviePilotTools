@@ -131,19 +131,28 @@ export struct SiteScreen {
   @State showSiteFilter: boolean = false;
   /** 弹窗里的临时选择：空 = 全部 */
   @State draftFilter: string[] = [];
+  /** 白名单放在 AppSettings 里，必须订阅 AppVM 才能保存后立即刷新列表 */
+  @State siteFilter: string[] = [];
 
   private listener: () => void = (): void => {
     this.state = this.vm.state.site;
   };
 
+  private appListener: () => void = (): void => {
+    this.siteFilter = this.appvm.state.settings.mpSiteFilter;
+  };
+
   aboutToAppear(): void {
     this.vm.subscribe(this.listener);
+    this.appvm.subscribe(this.appListener);
+    this.siteFilter = this.appvm.state.settings.mpSiteFilter;
     this.state = this.vm.state.site;
     this.vm.loadSites(false);
   }
 
   aboutToDisappear(): void {
     this.vm.unsubscribe(this.listener);
+    this.appvm.unsubscribe(this.appListener);
   }
 
   private totalSeeding(): number {
@@ -156,7 +165,7 @@ export struct SiteScreen {
 
   /** 白名单（空 = 全部） */
   private whitelist(): string[] {
-    return this.appvm.state.settings.mpSiteFilter;
+    return this.siteFilter;
   }
 
   private filterActive(): boolean {

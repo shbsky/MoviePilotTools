@@ -141,8 +141,8 @@ data class MpResource(
             val i = t.lastIndexOf('-')
             if (i <= 0 || i >= t.length - 1) return ""
             var g = t.substring(i + 1).trim()
-            // 发布组常写成「发布者@制作组」（BiVerse@ADWeb、KKYY@CHDBits、AOC@BiVerse），
-            // @ 前面是发布者 / 站点前缀，真正的小组名取 @ 之后那一段
+            // 发布组常写成「发布者@制作组」，@ 前面是发布者 / 站点前缀，
+            // 真正的小组名取 @ 之后那一段
             val at = g.lastIndexOf('@')
             if (at in 0 until g.length - 1) {
                 g = g.substring(at + 1).trim()

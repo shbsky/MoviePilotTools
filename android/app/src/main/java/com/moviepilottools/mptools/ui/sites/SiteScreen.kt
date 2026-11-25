@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
@@ -45,6 +48,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -195,6 +199,9 @@ private fun SiteFilterSheet(
     val colors = LocalMptColors.current
     var draft by remember { mutableStateOf(selected) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // 站点多时 Chip 区会远超一屏：给滚动区一个随屏幕自适应的上限，
+    // 标题和「完成」留在视野内，最后一排 Chip 与底部说明也能滚到。
+    val maxChipAreaHeight = (LocalConfiguration.current.screenHeightDp * 0.62).dp
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -223,28 +230,35 @@ private fun SiteFilterSheet(
                     Text("完成", color = Palette.blue, fontWeight = FontWeight.Medium)
                 }
             }
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
+            Column(
+                Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
+                    .heightIn(max = maxChipAreaHeight)
+                    .verticalScroll(rememberScrollState())
             ) {
-                SelectablePill("全部", draft.isEmpty()) { draft = emptyList() }
-                sites.forEach { s ->
-                    val on = s.name in draft
-                    SelectablePill(s.name, on) {
-                        draft = if (on) draft - s.name else draft + s.name
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    SelectablePill("全部", draft.isEmpty()) { draft = emptyList() }
+                    sites.forEach { s ->
+                        val on = s.name in draft
+                        SelectablePill(s.name, on) {
+                            draft = if (on) draft - s.name else draft + s.name
+                        }
                     }
                 }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "这里只让列表清爽。想减少 MoviePilot 的站点压力（搜索时不去请求这些站），请到 MP 后台·站点 里停用 —— 索引器压根不会请求停用的站点。",
+                    fontSize = 10.sp,
+                    color = colors.textSecondary,
+                    lineHeight = 15.sp
+                )
             }
-            Spacer(Modifier.height(12.dp))
-            Text(
-                "这里只让列表清爽。想减少 MoviePilot 的站点压力（搜索时不去请求这些站），请到 MP 后台·站点 里停用 —— 索引器压根不会请求停用的站点。",
-                fontSize = 10.sp,
-                color = colors.textSecondary,
-                lineHeight = 15.sp
-            )
         }
     }
 }

@@ -239,6 +239,9 @@ fun MpServerEditDialog(
             )
         }
     }
+    // 保存时会丢掉空地址行，「手动固定」的序号必须按保存后的有效地址算，
+    // 否则点了「地址 2」实际固定的是过滤后的另一条。
+    val pinnedTargets = endpoints.map { it.normalized() }.filter { it.host.isNotBlank() }
 
     fun build(): MpServer = MpServer(
         id = existing?.id ?: UUID.randomUUID().toString(),
@@ -249,7 +252,7 @@ fun MpServerEditDialog(
         username = username.trim(),
         password = password,
         endpointMode = mode,
-        pinnedEndpointIndex = pinned
+        pinnedEndpointIndex = pinned.coerceIn(0, (pinnedTargets.size - 1).coerceAtLeast(0))
     )
 
     fun save() {
@@ -419,7 +422,7 @@ fun MpServerEditDialog(
             if (mode == EndpointMode.MANUAL) {
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    endpoints.forEachIndexed { index, _ ->
+                    pinnedTargets.forEachIndexed { index, _ ->
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(9.dp))

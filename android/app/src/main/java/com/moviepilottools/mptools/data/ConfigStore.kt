@@ -5,6 +5,8 @@ import android.util.Base64
 import android.util.Log
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -102,7 +104,9 @@ class ConfigStore(context: Context) {
             Log.w(TAG, "加密不可用，降级明文存储")
             plain
         }
-        prefs.edit().putString(KEY_STATE, stored).apply()
+        // 必须同步落盘：apply() 只是先写内存再异步刷盘，用户保存后立刻退到后台
+        // 被系统回收时可能丢掉这次写入 —— 表现就是「明明设置好了，再进 APP 显示未配置」。
+        prefs.edit().putString(KEY_STATE, stored).commit()
     }
 
     /** 导出为明文 JSON（给备份用；密码加密由 BackupManager 负责） */
@@ -114,6 +118,20 @@ class ConfigStore(context: Context) {
      * 解析失败时返回 null，不改动现有配置。
      */
     fun restoreFromJson(plain: String): PersistedState? {
+        // 结构校验：必须是本应用导出的配置结构，拒绝把任意合法 JSON 当备份整包覆盖。
+        // 缺字段时用默认值补齐是反序列化器的固有行为，所以必须在解析前先看字段是否齐全。
+        val shapeOk = runCatching {
+            val root = json.parseToJsonElement(plain)
+            root is JsonObject &&
+                root["servers"] is JsonArray &&
+                root["settings"] is JsonObject &&
+                (root.containsKey("rssSources") || root.containsKey("mpServers") ||
+                    root.containsKey("activeServerId"))
+        }.getOrDefault(false)
+        if (!shapeOk) {
+            Log.e(TAG, "备份内容不是本应用的配置结构，已拒绝恢复")
+            return null
+        }
         val state = runCatching { json.decodeFromString<PersistedState>(plain) }.getOrElse {
             Log.e(TAG, "备份配置解析失败", it)
             return null

@@ -269,7 +269,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         activeServerId: String? = state.activeServerId,
         settings: AppSettings = state.settings
     ) {
-        persisted = persisted.copy(
+        // 先读盘上最新整包，再只改自己负责的字段。
+        // 曾经直接 copy 启动时的 persisted 快照：MpViewModel 刚存好的 mpServers
+        // 会被这里用旧快照整包覆盖掉 —— 「MP 服务器偶发变回未配置」的根因。
+        persisted = store.load().copy(
             servers = servers,
             activeServerId = activeServerId,
             settings = settings

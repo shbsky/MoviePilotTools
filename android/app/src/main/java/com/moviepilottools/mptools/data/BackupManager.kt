@@ -63,11 +63,14 @@ object BackupManager {
 
     /** 从备份文件内容还原配置 JSON。密码错误/文件损坏会抛 BackupException。 */
     fun unwrap(text: String, password: String): String {
-        val lines = text.trim().split('\n', '\r')
-        if (lines.isEmpty() || lines[0].trim() != HEADER) {
+        // 按行分割并丢掉空行：CRM/Unix 换行混用、文件带 BOM 都能读。
+        // 原来 split('\n', '\r') 会把 CRLF 拆出空行，lines[1] 变成空串 → 恢复必失败。
+        val lines = text.removePrefix("\uFEFF").trim()
+            .lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+        if (lines.isEmpty() || lines[0] != HEADER) {
             throw BackupException("不是 MoviePilotTools 备份文件")
         }
-        val payload = lines.getOrNull(1)?.trim()
+        val payload = lines.getOrNull(1)
             ?: throw BackupException("备份文件缺少数据段")
         val bytes = try {
             Base64.decode(payload, Base64.NO_WRAP)

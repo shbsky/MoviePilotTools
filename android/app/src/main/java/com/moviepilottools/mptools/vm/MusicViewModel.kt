@@ -420,7 +420,8 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
             toast = if (fav) "已取消收藏「${song.title}」" else "已收藏「${song.title}」"
         )
         viewModelScope.launch {
-            val ok = client.setFavorite(song.id, !fav)
+            // 网络异常也走回滚，与鸿蒙端的 .catch() 行为一致
+            val ok = runCatching { client.setFavorite(song.id, !fav) }.getOrDefault(false)
             if (!ok) {
                 val cur = _state.value
                 _state.value = cur.copy(

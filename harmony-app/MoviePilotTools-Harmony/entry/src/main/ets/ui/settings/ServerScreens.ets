@@ -305,6 +305,18 @@ export struct ServerEditDialog {
     return this.modeIdx === 1 ? EndpointMode.MANUAL : EndpointMode.AUTO;
   }
 
+  /** 保存时会丢掉空地址行，手动固定的序号必须按过滤后的有效地址算，否则会指错地址 */
+  private pinTargets(): Endpoint[] {
+    const out: Endpoint[] = [];
+    for (const ep of this.endpoints) {
+      const n: Endpoint = ep.normalized();
+      if (n.host.trim().length > 0) {
+        out.push(n);
+      }
+    }
+    return out;
+  }
+
   private buildConfig(): ServerConfig {
     const c: ServerConfig = new ServerConfig();
     c.id = this.existingId.length > 0 ? this.existingId : newUuid();
@@ -324,7 +336,7 @@ export struct ServerEditDialog {
     c.useApiKey = this.useApiKey;
     c.rpcPath = this.rpcPath.trim().length > 0 ? this.rpcPath : '/transmission/rpc';
     c.endpointMode = this.endpointMode();
-    c.pinnedEndpointIndex = this.pinned;
+    c.pinnedEndpointIndex = Math.max(0, Math.min(this.pinned, eps.length - 1));
     return c;
   }
 
@@ -528,7 +540,7 @@ export struct ServerEditDialog {
 
       if (this.modeIdx === 1) {
         Blank().height(8)
-        ForEach(this.endpoints, (ep: Endpoint, index: number): void => {
+        ForEach(this.pinTargets(), (ep: Endpoint, index: number): void => {
           Row() {
             Circle()
               .width(15)

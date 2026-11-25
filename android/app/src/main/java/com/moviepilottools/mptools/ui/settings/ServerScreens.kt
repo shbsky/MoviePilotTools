@@ -187,6 +187,8 @@ fun ServerEditDialog(
             addAll(initial)
         }
     }
+    // 保存时会丢掉空地址行，「手动固定」必须按保存后的有效地址序号，否则会指错地址。
+    val pinnedTargets = endpoints.map { it.normalized() }.filter { it.host.isNotBlank() }
 
     fun buildConfig(): ServerConfig = ServerConfig(
         id = existing?.id ?: UUID.randomUUID().toString(),
@@ -200,7 +202,7 @@ fun ServerEditDialog(
         useApiKey = useApiKey,
         rpcPath = rpcPath.ifBlank { "/transmission/rpc" },
         endpointMode = mode,
-        pinnedEndpointIndex = pinned
+        pinnedEndpointIndex = pinned.coerceIn(0, (pinnedTargets.size - 1).coerceAtLeast(0))
     )
 
     fun save() {
@@ -394,7 +396,7 @@ fun ServerEditDialog(
             }
             if (mode == EndpointMode.MANUAL) {
                 Spacer(Modifier.height(8.dp))
-                endpoints.forEachIndexed { index, endpoint ->
+                pinnedTargets.forEachIndexed { index, endpoint ->
                     Row(
                         Modifier
                             .fillMaxWidth()

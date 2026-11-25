@@ -5,7 +5,7 @@ import { AppViewModel, AppState } from '../../vm/AppViewModel';
 import { MpViewModel } from '../../vm/MpViewModel';
 import { MpServer } from '../../model/MpModels';
 import { get, TimeoutTier, Reply } from '../../net/HttpClient';
-import { STORE_THEME_MODE, STORE_FONT_SCALE, logInfo, logError } from '../../common/AppConstants';
+import { STORE_THEME_MODE, STORE_FONT_SCALE, REFRESH_OPTIONS, logInfo, logError } from '../../common/AppConstants';
 import { BackStack } from '../../common/BackStack';
 import { MusicViewModel } from '../../vm/MusicViewModel';
 import { ToastHub } from '../../vm/StoreBase';
@@ -27,8 +27,7 @@ import { BasicField, BasicFieldMulti, FieldLabel, DividerLine, DialogHost, Optio
  * MP 服务器行在 T04 接入 MpViewModel 后显示真实数量。
  */
 
-const APP_VERSION: string = '1.0.0';
-const REFRESH_OPTIONS: number[] = [5, 10, 15, 30, 60];
+const APP_VERSION: string = '1.0.1';
 /** 项目仓库（关于页「项目地址」+ 更新检查） */
 const REPO_URL: string = 'https://github.com/shbsky/MoviePilotTools';
 const REPO_DISPLAY: string = 'github.com/shbsky/MoviePilotTools';
@@ -322,6 +321,11 @@ export struct SettingsPage {
       }
       this.vm.reloadFromStore();
       this.mpvm.bootstrap();
+      // 音乐配置也在整包里，恢复后必须通知音乐 VM，否则音乐页仍用旧地址/账号
+      const restoredSettings: AppSettings = store.load().settings;
+      MusicViewModel.getInstance().configure(
+        restoredSettings.musicUrl, restoredSettings.musicUser, restoredSettings.musicPass
+      );
       this.pendingRestoreText = '';
       this.restorePassword = '';
       this.dialog = '';

@@ -316,6 +316,18 @@ export struct MpServerEditDialog {
     return this.modeIdx === 1 ? EndpointMode.MANUAL : EndpointMode.AUTO;
   }
 
+  /** 保存时会丢掉空地址行，手动固定的序号必须按过滤后的有效地址算，否则会指错地址 */
+  private pinTargets(): Endpoint[] {
+    const out: Endpoint[] = [];
+    for (const ep of this.endpoints) {
+      const n: Endpoint = ep.normalized();
+      if (n.host.trim().length > 0) {
+        out.push(n);
+      }
+    }
+    return out;
+  }
+
   private buildServer(): MpServer {
     const s: MpServer = new MpServer();
     s.id = this.existingId.length > 0 ? this.existingId : newUuid();
@@ -333,7 +345,7 @@ export struct MpServerEditDialog {
     s.username = this.username.trim();
     s.password = this.password;
     s.endpointMode = this.endpointMode();
-    s.pinnedEndpointIndex = this.pinned;
+    s.pinnedEndpointIndex = Math.max(0, Math.min(this.pinned, eps.length - 1));
     return s;
   }
 
@@ -545,7 +557,7 @@ export struct MpServerEditDialog {
       if (this.modeIdx === 1) {
         Blank().height(8)
         Flex({ wrap: FlexWrap.Wrap }) {
-          ForEach(this.endpoints, (ep: Endpoint, index: number): void => {
+          ForEach(this.pinTargets(), (ep: Endpoint, index: number): void => {
             Text(`地址 ${index + 1}`)
               .fontSize(this.theme.fs(11))
               .fontColor(this.pinned === index ? 0xFFFFFFFF : this.theme.colors.textSecondary)

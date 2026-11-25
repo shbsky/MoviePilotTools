@@ -246,6 +246,15 @@ export class CastController extends ObservableStore {
       this.commit(s2);
       this.refreshVolume();
       this.startMonitor(device);
+    }).catch((e: Error): void => {
+      // 兜底：push() 内部已捕获多数失败，这里防止未预料异常把 busy 永久卡住。
+      logWarn('DLNA-Cast', `队列投送失败：${e.message}`);
+      const s2: CastState = this.state.copy();
+      s2.busy = false;
+      if (s2.message === null || s2.message.length === 0) {
+        s2.message = `投送失败：${e.message}`;
+      }
+      this.commit(s2);
     });
   }
 
@@ -393,6 +402,9 @@ export class CastController extends ObservableStore {
         s.volumeSupported = true;
         this.commit(s);
       }
+    }).catch((e: Error): void => {
+      // 音箱不响应时保留上一次音量值；这是后台查询，不弹提示打扰。
+      logWarn('DLNA-Cast', `查询音量失败：${e.message}`);
     });
   }
 

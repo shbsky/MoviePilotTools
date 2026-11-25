@@ -199,7 +199,8 @@ class TrafficLedger(context: Context) {
             obj.put("base", toJson(base))
             obj.put("mbase", toJson(mbase))
             obj.put("last", toJson(last))
-            prefs.edit().putString(KEY_LEDGER, obj.toString()).apply()
+            // 与 ConfigStore 一致同步落盘，进程被回收时最多丢一轮数据而不是 20 秒
+            prefs.edit().putString(KEY_LEDGER, obj.toString()).commit()
             dirty = false
             savedAt = nowMs
         } catch (e: Exception) {

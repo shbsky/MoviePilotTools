@@ -185,6 +185,12 @@ export struct MusicPage {
   aboutToDisappear(): void {
     this.vm.unsubscribe(this.listener);
     BackStack.get().remove('music');
+    // 搜索防抖定时器必须在页面销毁时清掉：ViewModel 是单例，
+    // 页面退出了定时器仍会执行搜索，把结果写进全局状态，下次进来看到残留搜索。
+    if (this.searchTimer >= 0) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = -1;
+    }
     // 离开音乐页时一定要把「面板已打开」广播复位，否则底栏会一直躲着不回来
     this.setShowCast(false);
   }

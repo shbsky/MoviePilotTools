@@ -318,7 +318,7 @@ export class TrafficLedger {
     obj['last'] = countersToJson(this.last);
     try {
       prefs.putSync(KEY_LEDGER, JSON.stringify(obj));
-      prefs.flush();
+      prefs.flushSync();
       this.dirty = false;
       this.savedAt = nowMs;
     } catch (err) {

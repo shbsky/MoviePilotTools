@@ -1,5 +1,5 @@
 import { util } from '@kit.ArkTS';
-import { jStr, jNum, jBool } from '../common/AppConstants';
+import { jStr, jNum, jBool, pick } from '../common/AppConstants';
 
 /**
  * 核心数据模型，1:1 移植安卓 data/Models.kt。
@@ -21,6 +21,15 @@ export function serverTypeShortLabel(t: ServerType): string {
 
 export function serverTypeFromIndex(i: number): ServerType {
   return i === 1 ? ServerType.TRANSMISSION : ServerType.QBITTORRENT;
+}
+
+/** 兼容安卓备份里的字符串枚举名，也兼容旧版本地 JSON 的数字枚举 */
+export function serverTypeFromJsonValue(v: Object | undefined): ServerType {
+  if (typeof v === 'string') {
+    return (v as string).toUpperCase() === 'TRANSMISSION'
+      ? ServerType.TRANSMISSION : ServerType.QBITTORRENT;
+  }
+  return serverTypeFromIndex(typeof v === 'number' ? Math.trunc(v as number) : 0);
 }
 
 export function newUuid(): string {
@@ -215,6 +224,15 @@ export enum EndpointMode {
   MANUAL
 }
 
+/** 同 serverTypeFromJsonValue：字符串名（安卓）/ 数字（旧本地）都认 */
+export function endpointModeFromJsonValue(v: Object | undefined): EndpointMode {
+  if (typeof v === 'string') {
+    return (v as string).toUpperCase() === 'MANUAL' ? EndpointMode.MANUAL : EndpointMode.AUTO;
+  }
+  return Math.trunc(typeof v === 'number' ? (v as number) : 0) === 1
+    ? EndpointMode.MANUAL : EndpointMode.AUTO;
+}
+
 /**
  * 把一个输入框里的多行地址拆成端点列表。
  * 空行和以 # 开头的注释行会被忽略，hostKey 去重。
@@ -291,7 +309,7 @@ export function serverConfigFromJson(o: Record<string, Object>): ServerConfig {
   const sc: ServerConfig = new ServerConfig();
   sc.id = jStr(o, ['id'], newUuid());
   sc.name = jStr(o, ['name']);
-  sc.type = serverTypeFromIndex(Math.trunc(jNum(o, ['type'], 0)));
+  sc.type = serverTypeFromJsonValue(pick(o, ['type']));
   const eps: Endpoint[] = [];
   const raw: Object | undefined = o['endpoints'];
   if (raw !== undefined && Array.isArray(raw)) {
@@ -308,8 +326,7 @@ export function serverConfigFromJson(o: Record<string, Object>): ServerConfig {
   sc.apiKey = jStr(o, ['apiKey', 'api_key']);
   sc.useApiKey = jBool(o, ['useApiKey', 'use_api_key']);
   sc.rpcPath = jStr(o, ['rpcPath', 'rpc_path'], '/transmission/rpc');
-  sc.endpointMode = Math.trunc(jNum(o, ['endpointMode', 'endpoint_mode'], 0)) === 1
-    ? EndpointMode.MANUAL : EndpointMode.AUTO;
+  sc.endpointMode = endpointModeFromJsonValue(pick(o, ['endpointMode', 'endpoint_mode']));
   sc.pinnedEndpointIndex = Math.trunc(jNum(o, ['pinnedEndpointIndex', 'pinned_endpoint_index'], 0));
   sc.hidden = jBool(o, ['hidden']);
   return sc;

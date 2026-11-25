@@ -6,7 +6,7 @@
 
 <p align="center">
   Android / HarmonyOS 上的下载器 / MoviePilot / Songloft 一体化管理客户端<br>
-  <strong>v1.0.0</strong> · Android 8.0+（API 26）· HarmonyOS 5.0+ · GPL-3.0
+  <strong>v1.0.1</strong> · Android 8.0+（API 26）· HarmonyOS 5.0+ · GPL-3.0
 </p>
 
 在手机上管你的 qBittorrent、Transmission、MoviePilot 和 Songloft 音乐库：看任务、加种子、查媒体、点歌、投送到音箱。
@@ -95,17 +95,17 @@
 
 ### Android
 
-从 [Releases](https://github.com/shbsky/MoviePilotTools/releases) 下载 `MoviePilotTools-android-v1.0.0.apk` 直接安装（需要允许安装未知来源应用）。
+从 [Releases](https://github.com/shbsky/MoviePilotTools/releases) 下载 `MoviePilotTools-android-v1.0.1.apk` 直接安装（需要允许安装未知来源应用）。
 
 > **应用内更新**：「设置 → 应用更新」发现新版本时点「立即更新」，App 会自己下载安装包并在下载完直接拉起系统安装器，不用再打开浏览器。首次使用系统要求允许「安装未知应用」，开一次开关、之后每次都是自动续上安装。
 
 ### HarmonyOS
 
-鸿蒙版**暂不上架应用市场**，仓库里提供的 `.hap` 是用开发者调试证书签名的，而调试证书只对签名时登记过 UDID 的设备生效 —— 换一台鸿蒙设备安装会报「签名校验失败」。所以要装鸿蒙版，请按下面的「从源码构建 → HarmonyOS」自己编一个，用你自己的开发者证书签名。
+鸿蒙版**暂不上架应用市场**，仓库也不提供 `.hap` 安装包（调试证书与设备 UDID 绑定，别人装不上会报「签名校验失败」）。要装鸿蒙版，请按下面的「从源码构建 → HarmonyOS」自己编一个，用你自己的开发者证书签名。
 
 顺带说明：`.hap` 只能装在 HarmonyOS NEXT 设备上，Android 手机不认这个格式，解析都不会发生。
 
-应用不收集任何数据，配置（服务器地址、账号、Token）只保存在本机，Android 侧用 Keystore 加密存储，鸿蒙侧用 HUKS 加密存储。
+应用不收集任何数据，配置（服务器地址、账号、Token）只保存在本机，Android 侧用 Keystore 加密存储，鸿蒙侧用应用沙箱内的软件密钥加密存储。
 
 使用前请阅读 [用户协议](TERMS.md)：本工具是远程管理客户端，APP 本地不产生、不存储、不分发任何媒体 / 种子资源，所有内容均来自你自己部署的后端。
 

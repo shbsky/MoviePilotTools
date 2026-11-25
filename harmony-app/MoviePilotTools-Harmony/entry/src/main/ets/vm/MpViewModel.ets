@@ -919,9 +919,13 @@ export class MpViewModel extends ObservableStore {
   }
 
   private persist(servers: MpServer[], activeId: string | null): void {
-    this.persisted.mpServers = servers;
-    this.persisted.activeMpServerId = activeId;
-    this.store.save(this.persisted);
+    // 同 AppViewModel.commit：先读盘上最新整包再改自己的字段，
+    // 避免用启动快照把下载器配置 / 设置 / RSS 源整包覆盖掉。
+    const persisted: PersistedState = this.store.load();
+    persisted.mpServers = servers;
+    persisted.activeMpServerId = activeId;
+    this.store.save(persisted);
+    this.persisted = persisted;
     const s: MpState = this.state.copy();
     s.servers = servers;
     s.activeServerId = activeId;
@@ -948,8 +952,10 @@ export class MpViewModel extends ObservableStore {
       simple.push(it);
     }
     cache.items = simple;
-    this.persisted.heroCache = cache;
-    this.store.save(this.persisted);
+    const persisted: PersistedState = this.store.load();
+    persisted.heroCache = cache;
+    this.store.save(persisted);
+    this.persisted = persisted;
     const s: MpState = this.state.copy();
     s.heroCache = cache;
     this.commit(s);

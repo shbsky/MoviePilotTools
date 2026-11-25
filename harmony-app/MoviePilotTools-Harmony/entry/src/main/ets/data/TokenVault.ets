@@ -30,7 +30,7 @@ export class TokenVault {
     try {
       const plain: string = [base, token, String(expiresAt)].join(TokenVault.SEP);
       store.putSync(KEY_SONGLOFT, CryptoBox.encrypt(plain));
-      store.flush();
+      store.flushSync();
     } catch (err) {
       logWarn('TokenVault', '加密不可用，跳过令牌持久化');
     }
@@ -68,7 +68,7 @@ export class TokenVault {
       return;
     }
     store.deleteSync(KEY_SONGLOFT);
-    store.flush();
+    store.flushSync();
   }
 }
 

@@ -635,7 +635,8 @@ export class QBittorrentClient {
    * qB 4.x 用 paused，5.x 改名为 stopped，这里两个都发，老版本会忽略不认识的字段。
    */
   async addTorrents(urls: string[], savePath: string = '', category: string = '',
-    paused: boolean = false, firstLastPiecePriority: boolean = false): Promise<void> {
+    paused: boolean = false, firstLastPiecePriority: boolean = false,
+    skipChecking: boolean = false): Promise<void> {
     const targets: string[] = [];
     for (const u of urls) {
       const t: string = u.trim();
@@ -665,6 +666,9 @@ export class QBittorrentClient {
       if (firstLastPiecePriority) {
         form['firstLastPiecePrio'] = 'true';
         form['sequentialDownload'] = 'true';
+      }
+      if (skipChecking) {
+        form['skip_checking'] = 'true';
       }
       const res: Reply =
         await postForm(endpoint.url('api/v2/torrents/add'), form, this.headersFor(endpoint));

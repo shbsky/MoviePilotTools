@@ -456,15 +456,13 @@ export class AppViewModel extends ObservableStore {
 
   private commit(servers: ServerConfig[], activeServerId: string | null,
     settings: AppSettings): void {
-    const persisted: PersistedState = new PersistedState();
-    // 保留 RSS/MP 配置不被覆盖
-    const loaded: PersistedState = this.store.load();
+    // 以盘上最新整包为底，只改自己负责的三个字段。
+    // 原来 new PersistedState() 再逐字段拷，既漏了 heroCache，
+    // 也会在多 VM 并发保存时用旧快照抹掉别的模块刚写进去的配置。
+    const persisted: PersistedState = this.store.load();
     persisted.servers = servers;
     persisted.activeServerId = activeServerId;
     persisted.settings = settings;
-    persisted.rssSources = loaded.rssSources;
-    persisted.mpServers = loaded.mpServers;
-    persisted.activeMpServerId = loaded.activeMpServerId;
     this.store.save(persisted);
 
     const s: AppState = new AppState();
@@ -938,8 +936,10 @@ export class AppViewModel extends ObservableStore {
       throw new Error('服务器不存在');
     }
     if (server.type === ServerType.QBITTORRENT) {
+      // 第 5 位是 firstLastPiecePriority，skipChecking 是第 6 位；原来传错位，
+      // 勾了「跳过校验」反而变成首末块优先 + 顺序下载，校验照样跑。
       await this.qbOf(serverId).addTorrents([url.trim()], opts.savePath, opts.category, opts.paused,
-        opts.skipChecking);
+        false, opts.skipChecking);
     } else {
       await this.trOf(serverId).addTorrents([url.trim()], opts.savePath, opts.paused);
     }

@@ -114,13 +114,18 @@ export class BackupManager {
     }
     const salt: Uint8Array = bytes.slice(0, BackupManager.SALT_LEN);
     const iv: Uint8Array = bytes.slice(BackupManager.SALT_LEN, BackupManager.SALT_LEN + BackupManager.IV_LEN);
-    const encrypted: Uint8Array = bytes.slice(BackupManager.SALT_LEN + BackupManager.IV_LEN);
+    // 密文尾部是 GCM tag：必须切出来当 authTag 传，data 只给纯密文。
+    // 原来把 tag 留在 data 里、authTag 传全零 → 加密备份在鸿蒙端永远解不开。
+    const tag: Uint8Array = bytes.slice(bytes.length - BackupManager.TAG_LEN);
+    const encrypted: Uint8Array = bytes.slice(
+      BackupManager.SALT_LEN + BackupManager.IV_LEN, bytes.length - BackupManager.TAG_LEN
+    );
     try {
       const cipher: cryptoFramework.Cipher = cryptoFramework.createCipher('AES256|GCM|NoPadding');
       cipher.initSync(
         cryptoFramework.CryptoMode.DECRYPT_MODE,
         BackupManager.deriveKey(password, salt),
-        BackupManager.gcmParams(iv, new Uint8Array(BackupManager.TAG_LEN))
+        BackupManager.gcmParams(iv, tag)
       );
       const out: cryptoFramework.DataBlob = cipher.doFinalSync({ data: encrypted });
       return BackupManager.decodeUtf8(out.data);
