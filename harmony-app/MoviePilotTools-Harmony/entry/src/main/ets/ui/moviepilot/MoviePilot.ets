@@ -150,6 +150,78 @@ export struct PosterCard {
   }
 }
 
+/**
+ * 订阅编辑页的只读选择框。
+ * 必须是 @Component + @Prop：原来用 @Builder 按值传参，选完下载器/保存路径后 value
+ * 不随 @State 刷新，要切一次「基础/进阶」强制重建子树才显示新值（与之前修站点回显同一个坑）。
+ */
+@Component
+struct EditPickerRowCell {
+  @Consume('oiiTheme') theme: AppTheme;
+  @Prop value: string = '';
+  onTap: () => void = (): void => {
+  };
+
+  build() {
+    Row() {
+      Text(this.value)
+        .fontSize(this.theme.fs(13))
+        .fontColor(this.value.length > 0 && this.value !== 'null' ? this.theme.colors.textPrimary
+          : this.theme.colors.textSecondary)
+        .layoutWeight(1)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+      Text('⌄')
+        .fontSize(this.theme.fs(14))
+        .fontColor(this.theme.colors.textSecondary)
+    }
+    .width('100%')
+    .height(40)
+    .padding({ left: 12, right: 12 })
+    .backgroundColor(this.theme.colors.card)
+    .borderRadius(9)
+    .alignItems(VerticalAlign.Center)
+    .onClick((): void => {
+      this.onTap();
+    })
+  }
+}
+
+/** 订阅编辑页的开关行：on 必须 @Prop，否则从别处改状态时开关不刷新。 */
+@Component
+struct EditSwitchCell {
+  @Consume('oiiTheme') theme: AppTheme;
+  @Prop title: string = '';
+  @Prop hint: string = '';
+  @Prop on: boolean = false;
+  onChange: (v: boolean) => void = (v: boolean): void => {
+  };
+
+  build() {
+    Row() {
+      Column() {
+        Text(this.title)
+          .fontSize(this.theme.fs(13))
+          .fontColor(this.theme.colors.textPrimary)
+        Text(this.hint)
+          .fontSize(this.theme.fs(10))
+          .fontColor(this.theme.colors.textSecondary)
+          .margin({ top: 2 })
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+
+      Toggle({ type: ToggleType.Switch, isOn: this.on })
+        .onChange((isOn: boolean): void => {
+          this.onChange(isOn);
+        })
+    }
+    .width('100%')
+    .margin({ top: 9 })
+    .alignItems(VerticalAlign.Center)
+  }
+}
+
 @Component
 export struct MoviePilotPage {
   @Consume('oiiTheme') theme: AppTheme;
@@ -977,54 +1049,6 @@ export struct MoviePilotPage {
   }
 
   @Builder
-  EditPickerRow(value: string, onTap: () => void) {
-    Row() {
-      Text(value)
-        .fontSize(this.theme.fs(13))
-        .fontColor(value.length > 0 && value !== 'null' ? this.theme.colors.textPrimary
-          : this.theme.colors.textSecondary)
-        .layoutWeight(1)
-        .maxLines(1)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-      Text('⌄')
-        .fontSize(this.theme.fs(14))
-        .fontColor(this.theme.colors.textSecondary)
-    }
-    .width('100%')
-    .height(40)
-    .padding({ left: 12, right: 12 })
-    .backgroundColor(this.theme.colors.card)
-    .borderRadius(9)
-    .alignItems(VerticalAlign.Center)
-    .onClick(onTap)
-  }
-
-  @Builder
-  EditSwitch(title: string, hint: string, on: boolean, onChange: (v: boolean) => void) {
-    Row() {
-      Column() {
-        Text(title)
-          .fontSize(this.theme.fs(13))
-          .fontColor(this.theme.colors.textPrimary)
-        Text(hint)
-          .fontSize(this.theme.fs(10))
-          .fontColor(this.theme.colors.textSecondary)
-          .margin({ top: 2 })
-      }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-
-      Toggle({ type: ToggleType.Switch, isOn: on })
-        .onChange((isOn: boolean): void => {
-          onChange(isOn);
-        })
-    }
-    .width('100%')
-    .margin({ top: 9 })
-    .alignItems(VerticalAlign.Center)
-  }
-
-  @Builder
   SubscribeEditPage(sub: MpSubscribe) {
     Column() {
       // 顶栏：返回 + 标题（只认这里的返回和系统返回手势，没有下滑关闭）
@@ -1093,8 +1117,11 @@ export struct MoviePilotPage {
             Row() {
               Column() {
                 this.EditLabel('质量')
-                this.EditPickerRow(SubscribeOptions.labelOf(SubscribeOptions.quality(), this.eQuality), (): void => {
-                  this.openPicker('quality', '质量', SubscribeOptions.quality(), [this.eQuality], false, false);
+                EditPickerRowCell({
+                  value: SubscribeOptions.labelOf(SubscribeOptions.quality(), this.eQuality),
+                  onTap: (): void => {
+                    this.openPicker('quality', '质量', SubscribeOptions.quality(), [this.eQuality], false, false);
+                  }
                 })
               }
               .layoutWeight(1)
@@ -1104,11 +1131,13 @@ export struct MoviePilotPage {
 
               Column() {
                 this.EditLabel('分辨率')
-                this.EditPickerRow(SubscribeOptions.labelOf(SubscribeOptions.resolution(), this.eResolution),
-                  (): void => {
+                EditPickerRowCell({
+                  value: SubscribeOptions.labelOf(SubscribeOptions.resolution(), this.eResolution),
+                  onTap: (): void => {
                     this.openPicker('resolution', '分辨率', SubscribeOptions.resolution(),
                       [this.eResolution], false, false);
-                  })
+                  }
+                })
               }
               .layoutWeight(1)
               .alignItems(HorizontalAlign.Start)
@@ -1119,8 +1148,11 @@ export struct MoviePilotPage {
 
             Column() {
               this.EditLabel('特效')
-              this.EditPickerRow(SubscribeOptions.labelOf(SubscribeOptions.effect(), this.eEffect), (): void => {
-                this.openPicker('effect', '特效', SubscribeOptions.effect(), [this.eEffect], false, false);
+              EditPickerRowCell({
+                value: SubscribeOptions.labelOf(SubscribeOptions.effect(), this.eEffect),
+                onTap: (): void => {
+                  this.openPicker('effect', '特效', SubscribeOptions.effect(), [this.eEffect], false, false);
+                }
               })
               this.EditHint('不选表示不限')
             }
@@ -1163,11 +1195,14 @@ export struct MoviePilotPage {
 
             Column() {
               this.EditLabel('搜索周期')
-              this.EditPickerRow(this.eCustomInterval ? '自定义' : '跟随系统', (): void => {
-                this.openPicker('interval', '搜索周期', [
-                  new SubscribeOption('跟随系统', 'system'),
-                  new SubscribeOption('自定义', 'custom')
-                ], [this.eCustomInterval ? 'custom' : 'system'], false, false);
+              EditPickerRowCell({
+                value: this.eCustomInterval ? '自定义' : '跟随系统',
+                onTap: (): void => {
+                  this.openPicker('interval', '搜索周期', [
+                    new SubscribeOption('跟随系统', 'system'),
+                    new SubscribeOption('自定义', 'custom')
+                  ], [this.eCustomInterval ? 'custom' : 'system'], false, false);
+                }
               })
               if (this.eCustomInterval) {
                 TextInput({ text: this.eIntervalHours, placeholder: '每隔多少小时搜索一次' })
@@ -1191,12 +1226,15 @@ export struct MoviePilotPage {
               this.EditLabel('下载器 / 保存路径')
               Row() {
                 Column() {
-                  this.EditPickerRow(this.eDownloader.length === 0 ? '自动' : this.eDownloader, (): void => {
-                    const opts: SubscribeOption[] = [new SubscribeOption('自动（用系统设置）', '')];
-                    for (const d of this.state.downloaders) {
-                      opts.push(new SubscribeOption(d.name, d.name));
+                  EditPickerRowCell({
+                    value: this.eDownloader.length === 0 ? '自动' : this.eDownloader,
+                    onTap: (): void => {
+                      const opts: SubscribeOption[] = [new SubscribeOption('自动（用系统设置）', '')];
+                      for (const d of this.state.downloaders) {
+                        opts.push(new SubscribeOption(d.name, d.name));
+                      }
+                      this.openPicker('downloader', '下载器', opts, [this.eDownloader], false, false);
                     }
-                    this.openPicker('downloader', '下载器', opts, [this.eDownloader], false, false);
                   })
                 }
                 .layoutWeight(1)
@@ -1204,12 +1242,15 @@ export struct MoviePilotPage {
                 Blank().width(10)
 
                 Column() {
-                  this.EditPickerRow(this.eSavePath.length === 0 ? '自动' : this.eSavePath, (): void => {
-                    const opts: SubscribeOption[] = [new SubscribeOption('自动（用系统设置）', '')];
-                    for (const p of this.state.savePaths) {
-                      opts.push(new SubscribeOption(p.savePath, p.savePath));
+                  EditPickerRowCell({
+                    value: this.eSavePath.length === 0 ? '自动' : this.eSavePath,
+                    onTap: (): void => {
+                      const opts: SubscribeOption[] = [new SubscribeOption('自动（用系统设置）', '')];
+                      for (const p of this.state.savePaths) {
+                        opts.push(new SubscribeOption(p.savePath, p.savePath));
+                      }
+                      this.openPicker('savepath', '保存路径', opts, [this.eSavePath], false, false);
                     }
-                    this.openPicker('savepath', '保存路径', opts, [this.eSavePath], false, false);
                   })
                 }
                 .layoutWeight(1)
@@ -1221,11 +1262,21 @@ export struct MoviePilotPage {
             .alignItems(HorizontalAlign.Start)
             .margin({ top: 9 })
 
-            this.EditSwitch('洗版', '按洗版优先级进行过滤订阅', this.eBestVersion, (v: boolean): void => {
-              this.eBestVersion = v;
+            EditSwitchCell({
+              title: '洗版',
+              hint: '按洗版优先级进行过滤订阅',
+              on: this.eBestVersion,
+              onChange: (v: boolean): void => {
+                this.eBestVersion = v;
+              }
             })
-            this.EditSwitch('使用 IMDbID 搜索', '开启后引用 IMDbID 精确搜索资源', this.eImdb, (v: boolean): void => {
-              this.eImdb = v;
+            EditSwitchCell({
+              title: '使用 IMDbID 搜索',
+              hint: '开启后引用 IMDbID 精确搜索资源',
+              on: this.eImdb,
+              onChange: (v: boolean): void => {
+                this.eImdb = v;
+              }
             })
           } else {
             // 进阶页直接以「包含」开头：上面已经有「基础 / 进阶」分页，
@@ -1264,17 +1315,20 @@ export struct MoviePilotPage {
 
             Column() {
               this.EditLabel('优先级规则组')
-              this.EditPickerRow(this.eRuleGroups.length === 0
-                ? (this.state.subscribeRuleGroups.length === 0 ? '未配置规则组' : '不选使用系统设置')
-                : this.eRuleGroups.join('、'), (): void => {
-                if (this.state.subscribeRuleGroups.length === 0) {
-                  return;
+              EditPickerRowCell({
+                value: this.eRuleGroups.length === 0
+                  ? (this.state.subscribeRuleGroups.length === 0 ? '未配置规则组' : '不选使用系统设置')
+                  : this.eRuleGroups.join('、'),
+                onTap: (): void => {
+                  if (this.state.subscribeRuleGroups.length === 0) {
+                    return;
+                  }
+                  const opts: SubscribeOption[] = [];
+                  for (const g of this.state.subscribeRuleGroups) {
+                    opts.push(new SubscribeOption(g, g));
+                  }
+                  this.openPicker('rules', '优先级规则组', opts, this.eRuleGroups, true, false);
                 }
-                const opts: SubscribeOption[] = [];
-                for (const g of this.state.subscribeRuleGroups) {
-                  opts.push(new SubscribeOption(g, g));
-                }
-                this.openPicker('rules', '优先级规则组', opts, this.eRuleGroups, true, false);
               })
               this.EditHint('按选定的过滤规则组对订阅进行过滤')
             }
