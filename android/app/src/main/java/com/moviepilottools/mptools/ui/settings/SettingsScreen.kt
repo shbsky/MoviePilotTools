@@ -673,11 +673,9 @@ fun SettingsScreen(
     (installState as? InstallUi.Downloading)?.let { downloading ->
         val fraction = downloading.fraction
         OiiAlertDialog(
-            onDismissRequest = {
-                downloadJob?.cancel()
-                downloadJob = null
-                installState = null
-            },
+            // 关弹窗只是隐藏进度 UI，下载继续；下完自动弹安装提示。
+            // 真正要停下载请点下面的「取消」按钮。
+            onDismissRequest = { installState = null },
             title = { Text("正在下载更新", fontSize = 17.sp) },
             text = {
                 Column {
