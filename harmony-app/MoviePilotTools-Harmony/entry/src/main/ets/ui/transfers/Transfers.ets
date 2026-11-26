@@ -931,52 +931,53 @@ export struct TransfersPage {
 
       // 状态筛选：图标 + 文案 + 选中圆勾（与安卓 DrawerRow 一致）
       List() {
-        ForEach(this.filterOptions(), (f: StatusFilter): void => {
+        ForEach(this.filterOptions(), (f: StatusFilter, idx: number): void => {
           ListItem() {
-            Row() {
+            Column() {
               Row() {
+                // 与安卓 DrawerRow 一致：裸图标、紧凑行高，不再套 38vp 圆角色块
                 SymbolGlyph(this.filterIcon(f))
-                  .fontSize(19)
+                  .fontSize(18)
                   .fontColor([this.filterTint(f)])
-              }
-              .width(38)
-              .height(38)
-              .borderRadius(12)
-              .backgroundColor(withAlpha(this.filterTint(f), 0x1F))
-              .justifyContent(FlexAlign.Center)
-
-              Blank().width(13)
-              Text(statusFilterLabel(f))
-                .fontSize(this.theme.fs(14))
-                .fontColor(this.statusFilter === f ? this.theme.colors.accent
-                  : this.theme.colors.textPrimary)
-                .layoutWeight(1)
-              if (this.statusFilter === f) {
-                Stack() {
-                  SymbolGlyph($r('sys.symbol.checkmark'))
-                    .fontSize(12)
-                    .fontColor([0xFFFFFFFF])
+                  .width(18)
+                Blank().width(13)
+                Text(statusFilterLabel(f))
+                  .fontSize(this.theme.fs(14))
+                  .fontColor(this.statusFilter === f ? this.theme.colors.accent
+                    : this.theme.colors.textPrimary)
+                  .fontWeight(this.statusFilter === f ? FontWeight.Medium : FontWeight.Normal)
+                  .layoutWeight(1)
+                if (this.statusFilter === f) {
+                  Stack() {
+                    SymbolGlyph($r('sys.symbol.checkmark'))
+                      .fontSize(12)
+                      .fontColor([0xFFFFFFFF])
+                  }
+                  .width(17)
+                  .height(17)
+                  .borderRadius(9)
+                  .backgroundColor(this.theme.colors.accent)
                 }
-                .width(17)
-                .height(17)
-                .borderRadius(9)
-                .backgroundColor(this.theme.colors.accent)
+              }
+              .width('100%')
+              .padding({ left: 16, right: 16, top: 11, bottom: 11 })
+              .alignItems(VerticalAlign.Center)
+              .onClick((): void => {
+                this.statusFilter = f;
+                this.drawerOpen = false;
+                this.rebuild();
+              })
+              // 每行之间一条细横线（末行不画，避免和分组分隔线叠在一起）
+              if (idx < this.filterOptions().length - 1) {
+                this.DividerLine()
               }
             }
             .width('100%')
-            .padding({ left: 14, right: 16, top: 7, bottom: 7 })
-            .backgroundColor(this.statusFilter === f ? withAlpha(this.theme.colors.accent, 0x10)
-              : Color.Transparent)
-            .alignItems(VerticalAlign.Center)
-            .onClick((): void => {
-              this.statusFilter = f;
-              this.drawerOpen = false;
-              this.rebuild();
-            })
           }
         }, (f: StatusFilter): string => `f${f}`)
       }
-      .layoutWeight(1)
+      // 之前这里 layoutWeight(1) 把筛选列表撑满剩余高度，底部「刷新/配置/返回」被顶到抽屉最底下，
+      // 和安卓（紧跟在筛选行后面）不一致。改回按内容高度排布，菜单自然挨在一起。
       .width('100%')
       .scrollBar(BarState.Off)
 
@@ -986,11 +987,13 @@ export struct TransfersPage {
           this.vm.refreshNow();
           this.drawerOpen = false;
         })
+        this.DividerLine()
         this.DrawerAction($r('sys.symbol.gearshape'), '配置', Palette.indigo, true, (): void => {
           this.drawerOpen = false;
           // 下载器设置是整页（与 MoviePilot 服务器页统一），只有添加/编辑才弹窗
           this.navStack.pushPathByName('serverList', '');
         })
+        this.DividerLine()
         this.DrawerAction($r('sys.symbol.chevron_left'), '返回', this.theme.colors.textSecondary,
           false, (): void => {
             this.drawerOpen = false;

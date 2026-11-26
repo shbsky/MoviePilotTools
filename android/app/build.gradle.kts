@@ -15,9 +15,9 @@ android {
         applicationId = "com.moviepilottools.mptools"
         minSdk = 26
         targetSdk = 35
-        // 全新发布：仓库重建 + 新签名 + 站点信息脱敏（v1.0.0 起点，当前 v1.0.1）
-        versionCode = 2
-        versionName = "1.0.1"
+        // 全新发布：仓库重建 + 新签名 + 站点信息脱敏（v1.0.0 起点，当前 v1.0.2）
+        versionCode = 3
+        versionName = "1.0.2"
         resourceConfigurations += listOf("zh", "en")
     }
 

@@ -254,21 +254,16 @@ fun DashboardScreen(
             }
         } else {
             val servers = state.servers.filter { it.id in state.snapshots.keys || state.snapshots.isEmpty() }
-            val rows = servers.chunked(2)
-            rows.forEach { rowServers ->
+            // 与鸿蒙一致：一台服务器占一整行（半宽卡片太挤，长名字和数值容易被挤掉）
+            servers.forEach { server ->
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(Metrics.cardGap)) {
-                        rowServers.forEach { server ->
-                            ServerStatusTile(
-                                modifier = Modifier.weight(1f),
-                                server = server,
-                                snapshot = state.snapshots[server.id],
-                                tasks = state.tasks,
-                                onClick = { onOpenServerTasks(server.id) }
-                            )
-                        }
-                        if (rowServers.size == 1) Spacer(Modifier.weight(1f))
-                    }
+                    ServerStatusTile(
+                        modifier = Modifier.fillMaxWidth(),
+                        server = server,
+                        snapshot = state.snapshots[server.id],
+                        tasks = state.tasks,
+                        onClick = { onOpenServerTasks(server.id) }
+                    )
                 }
             }
         }
@@ -850,18 +845,27 @@ private fun ServerStatusTile(
             )
         }
         Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            IconValue(Icons.Rounded.ArrowUpward, formatBytes(upSpeed) + "/s", Palette.green)
-            IconValue(Icons.Rounded.ArrowDownward, formatBytes(downSpeed) + "/s", Palette.blue)
+        // 两列各占一半（与鸿蒙 layoutWeight(1) 一致），整卡变宽后数值不会分列到两端
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) {
+                IconValue(Icons.Rounded.ArrowUpward, formatBytes(upSpeed) + "/s", Palette.green)
+            }
+            Box(Modifier.weight(1f)) {
+                IconValue(Icons.Rounded.ArrowDownward, formatBytes(downSpeed) + "/s", Palette.blue)
+            }
         }
         Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            IconValue(Icons.Rounded.Storage, formatStorageSize(snapshot?.seedingSize ?: 0), colors.textSecondary)
-            IconValue(
-                Icons.Rounded.ShowChart,
-                String.format(Locale.US, "%.2f", snapshot?.ratio ?: 0.0),
-                colors.textSecondary
-            )
+        Row(Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) {
+                IconValue(Icons.Rounded.Storage, formatStorageSize(snapshot?.seedingSize ?: 0), colors.textSecondary)
+            }
+            Box(Modifier.weight(1f)) {
+                IconValue(
+                    Icons.Rounded.ShowChart,
+                    String.format(Locale.US, "%.2f", snapshot?.ratio ?: 0.0),
+                    colors.textSecondary
+                )
+            }
         }
         if (!online && snapshot?.error != null) {
             Spacer(Modifier.height(8.dp))

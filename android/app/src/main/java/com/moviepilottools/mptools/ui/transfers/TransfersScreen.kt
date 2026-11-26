@@ -101,6 +101,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moviepilottools.mptools.data.ServerConfig
@@ -289,34 +290,52 @@ fun TransfersScreen(
             }
         }
 
-        // 右下角两个悬浮按钮：+ 新增下载 / 排序
-        Column(
+        // 右下角两个悬浮按钮：+ 新增下载 / 排序（横排，和鸿蒙一致）
+        Row(
             Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
                 .padding(end = 18.dp, bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FloatingButton(
                 icon = Icons.Rounded.Add,
                 description = "新增下载",
                 background = Palette.blue,
                 tint = Color.White,
-                size = 54,
+                size = 48,
                 onClick = onOpenAdd
             )
-            FloatingButton(
-                icon = Icons.Rounded.FilterList,
-                description = "排序",
-                // 深色主题下「卡片色底 + 蓝色图标」几乎糊在背景里（用户反馈看不清）：
-                // 改成描边 + 近白图标，再给它一层投影，浮在列表之上才认得出这是个按钮
-                background = colors.card,
-                tint = if (colors.isDark) colors.textPrimary else colors.accent,
-                size = 46,
-                border = colors.accent.copy(alpha = if (colors.isDark) 0.55f else 0.30f),
-                onClick = { sortSheet = true }
-            )
+            // 排序做成挂在按钮上的菜单（跟鸿蒙 bindMenu 一样），不再用居中弹窗；
+            // 按钮在屏幕底部，菜单会自动改到按钮上方展开。
+            Box {
+                FloatingButton(
+                    icon = Icons.Rounded.FilterList,
+                    description = "排序",
+                    // 深色主题下「卡片色底 + 蓝色图标」几乎糊在背景里（用户反馈看不清）：
+                    // 改成描边 + 近白图标，再给它一层投影，浮在列表之上才认得出这是个按钮
+                    background = colors.card,
+                    tint = if (colors.isDark) colors.textPrimary else colors.accent,
+                    size = 48,
+                    border = colors.accent.copy(alpha = if (colors.isDark) 0.55f else 0.30f),
+                    onClick = { sortSheet = !sortSheet }
+                )
+                SortMenu(
+                    expanded = sortSheet,
+                    isQb = server?.type == ServerType.QBITTORRENT,
+                    current = sortMode,
+                    ascending = sortAsc,
+                    onPick = { mode ->
+                        if (mode == sortMode) sortAsc = !sortAsc else {
+                            sortMode = mode
+                            sortAsc = false
+                        }
+                        sortSheet = false
+                    },
+                    onDismiss = { sortSheet = false }
+                )
+            }
         }
 
         // ---------- 侧边栏 ----------
@@ -385,23 +404,6 @@ fun TransfersScreen(
                     else -> runBatch(action)
                 }
             }
-        )
-    }
-
-    // ---------- 排序面板 ----------
-    if (sortSheet) {
-        SortDialog(
-            isQb = server?.type == ServerType.QBITTORRENT,
-            current = sortMode,
-            ascending = sortAsc,
-            onPick = { mode ->
-                if (mode == sortMode) sortAsc = !sortAsc else {
-                    sortMode = mode
-                    sortAsc = false
-                }
-                sortSheet = false
-            },
-            onDismiss = { sortSheet = false }
         )
     }
 
@@ -807,7 +809,8 @@ private fun DrawerPanel(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            StatusFilter.entries.forEach { filter ->
+            // 每行之间一条细横线（末行不画，避免和下面的分组分隔线叠在一起）
+            StatusFilter.entries.forEachIndexed { index, filter ->
                 DrawerRow(
                     icon = statusIcon(filter),
                     tint = statusTint(filter),
@@ -828,6 +831,9 @@ private fun DrawerPanel(
                     },
                     onClick = { onSelectFilter(filter) }
                 )
+                if (index < StatusFilter.entries.lastIndex) {
+                    Box(Modifier.fillMaxWidth().height(0.6.dp).background(colors.separator))
+                }
             }
 
             Box(Modifier.fillMaxWidth().height(0.6.dp).background(colors.separator))
@@ -837,6 +843,7 @@ private fun DrawerPanel(
                 label = "刷新",
                 onClick = onRefresh
             )
+            Box(Modifier.fillMaxWidth().height(0.6.dp).background(colors.separator))
             DrawerRow(
                 icon = Icons.Rounded.Settings,
                 tint = Palette.indigo,
@@ -851,6 +858,7 @@ private fun DrawerPanel(
                 },
                 onClick = onOpenConfig
             )
+            Box(Modifier.fillMaxWidth().height(0.6.dp).background(colors.separator))
             DrawerRow(
                 icon = Icons.Rounded.ArrowBack,
                 tint = Palette.orange,
@@ -1062,10 +1070,13 @@ private fun BatchDialog(
     }
 }
 
-// ---------------------------------------------------------------- 排序面板
+// ---------------------------------------------------------------- 排序菜单
+// 挂在排序按钮上方（按钮在屏幕底部，Material 的 DropdownMenu 会自动改到上方展开），
+// 和鸿蒙的 bindMenu 一样：点一次选中、再点同一个切换升降序，不再用居中弹窗。
 
 @Composable
-private fun SortDialog(
+private fun SortMenu(
+    expanded: Boolean,
     isQb: Boolean,
     current: SortMode,
     ascending: Boolean,
@@ -1076,62 +1087,29 @@ private fun SortDialog(
     val modes = remember(isQb) {
         SortMode.entries.filter { isQb || it != SortMode.RATIO }
     }
-
-    OiiDialog(
-        title = "排序",
-        subtitle = "点一次切换升降序",
-        confirmText = "关闭",
-        cancelText = null,
-        maxHeight = 400.dp,
-        onDismiss = onDismiss,
-        onConfirm = onDismiss
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        modifier = Modifier.width(180.dp),
+        // 菜单右边缘贴着排序按钮右边缘（按钮 48dp），和鸿蒙弹出位置一致
+        offset = DpOffset(x = (-132).dp, y = 0.dp),
+        containerColor = colors.card
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(colors.background)
-        ) {
-            modes.forEachIndexed { index, mode ->
-                val selected = mode == current
-                if (index > 0) {
-                    Box(
-                        Modifier
-                            .padding(start = 12.dp)
-                            .fillMaxWidth()
-                            .height(0.6.dp)
-                            .background(colors.separator)
-                    )
-                }
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { onPick(mode) }
-                        .padding(horizontal = 12.dp, vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+        modes.forEach { mode ->
+            val selected = mode == current
+            val label = if (selected) {
+                "${mode.label}${if (ascending) "（升序 ↑）" else "（降序 ↓）"}"
+            } else mode.label
+            DropdownMenuItem(
+                text = {
                     Text(
-                        mode.label,
+                        label,
                         fontSize = 14.sp,
-                        color = if (selected) colors.accent else colors.textPrimary,
-                        modifier = Modifier.weight(1f)
+                        color = if (selected) colors.accent else colors.textPrimary
                     )
-                    if (selected) {
-                        Text(
-                            if (ascending) "升序" else "降序",
-                            fontSize = 11.sp,
-                            color = colors.accent
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            Icons.Rounded.Check,
-                            null,
-                            tint = colors.accent,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
+                },
+                onClick = { onPick(mode) }
+            )
         }
     }
 }

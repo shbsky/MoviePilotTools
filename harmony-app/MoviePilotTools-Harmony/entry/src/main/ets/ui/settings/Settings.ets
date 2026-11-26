@@ -27,10 +27,10 @@ import { BasicField, BasicFieldMulti, FieldLabel, DividerLine, DialogHost, Optio
  * MP 服务器行在 T04 接入 MpViewModel 后显示真实数量。
  */
 
-const APP_VERSION: string = '1.0.1';
+const APP_VERSION: string = '1.0.2';
 /** 项目仓库（关于页「项目地址」+ 更新检查） */
 const REPO_URL: string = 'https://github.com/shbsky/MoviePilotTools';
-const REPO_DISPLAY: string = 'github.com/shbsky/MoviePilotTools';
+const REPO_DISPLAY: string = 'GitHub';
 const RELEASES_URL: string = 'https://github.com/shbsky/MoviePilotTools/releases';
 
 class ProbeCheck {
@@ -732,6 +732,12 @@ export struct SettingsPage {
               Text(this.appVersion)
                 .fontSize(this.theme.fs(13))
                 .fontColor(this.theme.colors.textSecondary)
+              // 版本行不可点，没有箭头；用透明箭头占同样的宽度，版本号与下面几行的值右边缘对齐
+              Text('›')
+                .fontSize(this.theme.fs(14))
+                .fontColor(this.theme.colors.textSecondary)
+                .padding({ left: 4 })
+                .opacity(0)
             }
             .width('100%')
             .padding(14)

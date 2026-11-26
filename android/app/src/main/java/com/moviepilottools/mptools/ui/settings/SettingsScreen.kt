@@ -454,6 +454,8 @@ fun SettingsScreen(
                     fontSize = 13.sp,
                     color = colors.textSecondary
                 )
+                // 版本行不可点，没有箭头；补等宽占位，让版本号和下面几行的值右边缘对齐
+                Spacer(Modifier.width(19.dp))
             }
             DividerLine(Modifier.padding(start = 14.dp))
             Row(
@@ -479,7 +481,7 @@ fun SettingsScreen(
             ) {
                 Text("应用更新", fontSize = 15.sp, color = colors.textPrimary, modifier = Modifier.weight(1f))
                 Text(
-                    if (updateChecking) "检查中…" else "v${com.moviepilottools.mptools.BuildConfig.VERSION_NAME}",
+                    if (updateChecking) "检查中…" else "检查更新",
                     fontSize = 13.sp,
                     color = colors.textSecondary
                 )

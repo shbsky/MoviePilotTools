@@ -365,7 +365,7 @@ fun SubscribeEditSheet(
                 Spacer(Modifier.height(10.dp))
 
                 // 底部操作条：跟内容一起滚，滚到底就能看到，不再单独分层（少了割裂感）
-                // 字段间距已整体收紧，常见屏高下基础页一屏可见；小屏仍可滚动。
+                // 末尾留 96dp：滚到底时按钮停在悬浮底栏上方，小屏也不会被胶囊盖住。
             Row(
                 Modifier
                     .padding(top = 10.dp, bottom = 12.dp),
@@ -427,6 +427,7 @@ fun SubscribeEditSheet(
                     )
                 }
             }
+            Spacer(Modifier.height(96.dp))
             }
         }
     }
