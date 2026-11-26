@@ -226,7 +226,8 @@ fun TorrentDetailScreen(
                 InfoRow(label = "分类 / 标签") {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (task.category.isNotBlank()) {
                             TinyPill(task.category, Palette.green.copy(alpha = 0.14f), Palette.green)

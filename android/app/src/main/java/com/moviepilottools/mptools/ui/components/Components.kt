@@ -415,13 +415,22 @@ fun IconValue(
 
 @Composable
 fun TinyPill(text: String, background: Color, foreground: Color, fontSize: Int = 10) {
+    // 固定高度 + 垂直居中：只靠 padding 撑高度时，不同字符的字体行高不一样，
+    // 一排 pill 会高低不齐。锁死高度后所有色块绝对一致，文字统一居中。
     Box(
         modifier = Modifier
+            .height((fontSize + 9).dp)
             .clip(RoundedCornerShape(6.dp))
             .background(background)
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text, color = foreground, fontSize = fontSize.sp, maxLines = 1)
+        Text(
+            text,
+            color = foreground,
+            fontSize = fontSize.sp,
+            maxLines = 1
+        )
     }
 }
 
